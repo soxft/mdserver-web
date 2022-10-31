@@ -1,4 +1,10 @@
-### mdserver-web 0.9.7
+<p align="center">
+  <img alt="logo" src="https://cdn.jsdelivr.net/gh/midoks/mdserver-web@latest/route/static/logo.png" height="140" />
+  <h3 align="center">mdserver-web</h3>
+  <p align="center">一款简单Linux面板服务</p>
+</p>
+
+### 简介
 
 简单的Linux面板,感谢BT.CN写出如此好的web管理软件。我一看到，就知道这是我一直想要的页面化管理方式。
 复制了后台管理界面，按照自己想要的方式写了一版。
@@ -59,7 +65,22 @@ phpMyAdmin[5.2.0]支持MySQL[8.0]
 
 PHP[53-72]支持phpMyAdmin[4.4.15]
 PHP[72-81]支持phpMyAdmin[5.2.0]
+
+
 ```
+
+# 特别赞助
+
+- [找资源 - 阿里云盘资源搜索引擎](https://zhaoziyuan.la/)
+
+# AD - VPS推荐 - 🙏
+
+- [ZZZ评测](https://www.zzzvps.com/)
+
+| 服务商			| 	LOGO   |  推广地址  | 优惠码 |
+| ------------- |----------|-----------|-------|
+| digitalvirt	|[![digitalvirt](https://digitalvirt.com/templates/BlueWhite/img/logo-dark.svg)](https://digitalvirt.com/aff.php?aff=154) | https://digitalvirt.com/aff.php?aff=154 | 9SYDY7UH0U |
+| 搬瓦工	|[![搬瓦工](https://bwh81.net/templates/organicbandwagon/images/logo.png)](https://bwh81.net/aff.php?aff=54161) | https://bwh81.net/aff.php?aff=54161 | BWH3HYATVBJW |
 
 # Docker
 
@@ -71,10 +92,12 @@ docker run -itd --name mw-server --privileged=true -p 7200:7200 -p 80:80 -p 443:
 ```
 
 
-### 版本更新 0.9.7
+### 版本更新 0.10.2
 
-* haproxy插件添加.
-* 细节优化.
+* 修复上次更新的UI问题。
+* `FTP存储空间` 备份数据库修复。
+* 修复计划任务执行Python脚本的编码问题。
+* 添加，修改计划任务参数强校验。
 
 ### JSDelivr安装地址
 
@@ -88,6 +111,12 @@ curl -fsSL https://cdn.jsdelivr.net/gh/midoks/mdserver-web@latest/scripts/instal
 
 ```
 curl -fsSL https://cdn.jsdelivr.net/gh/midoks/mdserver-web@latest/scripts/update.sh | bash
+```
+
+- 卸载脚本
+
+```
+curl -fsSL https://cdn.jsdelivr.net/gh/midoks/mdserver-web@latest/scripts/uninstall.sh | bash
 ```
 
 ### 备用地址
@@ -105,6 +134,12 @@ curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/master/scripts
 curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/master/scripts/update.sh | bash
 ```
 
+- 卸载脚本
+
+```
+curl -fsSL https://raw.githubusercontent.com/midoks/mdserver-web/master/scripts/uninstall.sh | bash
+```
+
 
 ### 通用软件安装[命令行安装]
 
@@ -120,9 +155,19 @@ curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/dev/scripts/qu
 ```
 curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/dev/scripts/install_dev.sh | bash
 curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/dev/scripts/update_dev.sh | bash
+
+
+curl -fsSL https://gitee.com/midoks/mdserver-web/raw/master/scripts/install_dev.sh | bash
+curl -fsSL https://gitee.com/midoks/mdserver-web/raw/master/scripts/update_dev.sh | bash
 ```
 
+### 捐赠地址 USDT（TRC20）
+
+TVbNgrpeGBGZVm5gTLa21ADP7RpnPFhjya
+
+
 ### 微信赞助
+
 [![截图](https://cdn.jsdelivr.net/gh/midoks/mdserver-web@latest/route/static/img/weixin_zz.jpg)](https://cdn.jsdelivr.net/gh/midoks/mdserver-web@latest/route/static/img/weixin_zz.jpg)
 
 
@@ -138,7 +183,7 @@ curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/dev/scripts/up
 
 ### 感谢开发赞助
 
-[![digitalvirt](https://digitalvirt.com/templates/BlueWhite/img/logo-dark.svg)](https://digitalvirt.com/)
+[![digitalvirt](https://digitalvirt.com/templates/BlueWhite/img/logo-dark.svg)](https://digitalvirt.com/aff.php?aff=154)
 
 ### 授权许可
 

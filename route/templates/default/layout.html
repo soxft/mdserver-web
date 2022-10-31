@@ -14,6 +14,15 @@
     <!--[if lte IE 9]>
 		<script src="/static/js/requestAnimationFrame.js"></script>
 	<![endif]-->
+    <!-- 统计一下用户量,让我的开发更有激情 -->
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FC74BB2RGD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-FC74BB2RGD');
+    </script>
 </head>
 
 <body>
@@ -52,6 +61,7 @@
             <script src="/static/build/addons/fullscreen/fullscreen.js?v={{config.version}}"></script>
             <script src="/static/js/socket.io.min.js?v={{config.version}}"></script>
             <script src="/static/build/addons/winptyCompat/winptyCompat.js?v={{config.version}}"></script>
+            <script src="/static/app/upload.js?v={{config.version}}"></script>
             <script src="/static/app/public.js?v={{config.version}}"></script>
             <script src="/static/js/echarts.min.js?v={{config.version}}"></script>
             <script src="/static/js/jquery.dragsort-0.5.2.min.js?v={{config.version}}"></script>

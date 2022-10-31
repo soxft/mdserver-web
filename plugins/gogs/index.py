@@ -31,9 +31,6 @@ def getPluginName():
 def getPluginDir():
     return mw.getPluginDir() + '/' + getPluginName()
 
-sys.path.append(getPluginDir() + "/class")
-import mysqlDb
-
 
 def getServerDir():
     return mw.getServerDir() + '/' + getPluginName()
@@ -235,16 +232,24 @@ def getDbConfValue():
 
 
 def pMysqlDb(conf):
-
     host = conf['HOST'].split(':')
-    conn = mysqlDb.mysqlDb()
+    # pymysql
+    db = mw.getMyORM()
+    # MySQLdb |
+    # db = mw.getMyORMDb()
 
-    conn.setHost(host[0])
-    conn.setUser(conf['USER'])
-    conn.setPwd(conf['PASSWD'])
-    conn.setPort(int(host[1]))
-    conn.setDb(conf['NAME'])
-    return conn
+    db.setPort(int(host[1]))
+    db.setUser(conf['USER'])
+
+    if 'PASSWD' in conf:
+        db.setPwd(conf['PASSWD'])
+    else:
+        db.setPwd(conf['PASSWORD'])
+
+    db.setDbName(conf['NAME'])
+    # db.setSocket(getSocketFile())
+    db.setCharset("utf8")
+    return db
 
 
 def pSqliteDb(conf):
@@ -457,6 +462,11 @@ def userList():
     if not os.path.exists(conf):
         return mw.returnJson(False, "请先安装初始化!<br/>默认地址:http://" + mw.getLocalIp() + ":3000")
 
+    conf = getDbConfValue()
+    gtype = getGogsDbType(conf)
+    if gtype != 'mysql':
+        return mw.returnJson(False, "仅支持mysql数据操作!")
+
     import math
     args = getArgs()
 
@@ -476,7 +486,7 @@ def userList():
 
     start = (page - 1) * page_size
     list_count = pQuery('select count(id) as num from user')
-    count = list_count[0][0]
+    count = list_count[0]["num"]
     list_data = pQuery(
         'select id,name,email from user order by id desc limit ' + str(start) + ',' + str(page_size))
     data['list'] = mw.getPage({'count': count, 'p': page,
@@ -681,12 +691,7 @@ def getTotalStatistics():
     data = {}
     if st.strip() == 'start':
         list_count = pQuery('select count(id) as num from repository')
-
-        if list_count.find("error") > -1:
-            data['status'] = False
-            data['count'] = 0
-            return mw.returnJson(False, 'fail', data)
-
+        count = list_count[0]["num"]
         data['status'] = True
         data['count'] = count
         data['ver'] = mw.readFile(getServerDir() + '/version.pl').strip()

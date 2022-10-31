@@ -19,8 +19,8 @@ echo "安装php-${version} ..." > $install_tmp
 mkdir -p $sourcePath/php
 mkdir -p $serverPath/php
 
-cd $serverPath/mdserver-web/plugins/php/lib && /bin/bash freetype_old.sh
-cd $serverPath/mdserver-web/plugins/php/lib && /bin/bash zlib.sh
+cd ${rootPath}/plugins/php/lib && /bin/bash freetype_old.sh
+cd ${rootPath}/plugins/php/lib && /bin/bash zlib.sh
 
 if [ ! -d $sourcePath/php/php${PHP_VER} ];then
 	if [ ! -f $sourcePath/php/php-${version}.tar.xz ];then
@@ -63,6 +63,10 @@ if [ "${cpuCore}" != "1" ] && [ "${MEM_INFO}" != "0" ];then
     fi
 else
     cpuCore="1"
+fi
+
+if [ "$cpuCore" -gt "1" ];then
+	cpuCore=`echo "$cpuCore" | awk '{printf("%.f",($1)*0.8)}'`
 fi
 # ----- cpu end ------
 

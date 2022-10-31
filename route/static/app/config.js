@@ -26,11 +26,24 @@ function closePanel(){
 	}}, function() {
 		$.post('/config/close_panel','',function(rdata){
 			layer.msg(rdata.msg,{icon:rdata.status?1:2});
-			setTimeout(function(){window.location.reload();},1000);
+			setTimeout(function(){
+				window.location.reload();
+			},1000);
 		},'json');
 	},function(){
 		$("#closePl").prop("checked",false);
 	});
+}
+
+//开发模式
+function debugMode(){
+	var loadT = layer.msg('正在发送请求,请稍候...', { icon: 16, time: 0, shade: [0.3, '#000'] });
+    $.post('/config/open_debug', {}, function (rdata) {
+        layer.close(loadT);
+        showMsg(rdata.msg, function(){
+			window.location.reload();
+		} ,{icon:rdata.status?1:2}, 1000);
+    },'json');
 }
 
 
@@ -41,7 +54,7 @@ function modifyAuthPath() {
         type: 1,
         area: "500px",
         title: "修改安全入口",
-        closeBtn: 2,
+        closeBtn: 1,
         shift: 5,
         shadeClose: false,
         content: '<div class="bt-form bt-form pd20 pb70">\
@@ -118,7 +131,7 @@ function setPassword(a) {
 		type: 1,
 		area: "290px",
 		title: '修改密码',
-		closeBtn: 2,
+		closeBtn: 1,
 		shift: 5,
 		shadeClose: false,
 		content: "<div class='bt-form pd20 pb70'>\
@@ -174,7 +187,7 @@ function setUserName(a) {
 		type: 1,
 		area: "290px",
 		title: '修改面板用户名',
-		closeBtn: 2,
+		closeBtn: 1,
 		shift: 5,
 		shadeClose: false,
 		content: "<div class='bt-form pd20 pb70'>\
@@ -225,7 +238,7 @@ function setPanelSSL(){
 		<input type="checkbox" id="checkSSL" /><label style="font-weight: 400;margin: 3px 5px 0px;" for="checkSSL">我已了经解详情,并愿意承担风险</label>\
 		<a target="_blank" class="btlink" href="https://www.bt.cn/bbs/thread-4689-1-1.html" style="float: right;">了解详情</a>\
 	</p>';
-	layer.confirm(msg,{title:'设置面板SSL',closeBtn:2,icon:3,area:'550px',cancel:function(){
+	layer.confirm(msg,{title:'设置面板SSL',closeBtn:1,icon:3,area:'550px',cancel:function(){
 		if(status == 0){
 			$("#panelSSL").prop("checked",false);
 		}
@@ -289,7 +302,7 @@ function getPanelSSL(){
 			type: 1,
 			area: "600px",
 			title: '自定义面板证书',
-			closeBtn: 2,
+			closeBtn: 1,
 			shift: 5,
 			shadeClose: false,
 			content:certBody

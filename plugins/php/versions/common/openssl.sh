@@ -41,15 +41,20 @@ Install_lib()
 		return
 	fi
 	
-	# cd $serverPath/mdserver-web/plugins/php/lib && /bin/bash openssl_10.sh
+	# cd ${rootPath}/plugins/php/lib && /bin/bash openssl_10.sh
 	if [ "$version" -lt "70" ];then
-		cd $serverPath/mdserver-web/plugins/php/lib && /bin/bash openssl_10.sh
+		cd ${rootPath}/plugins/php/lib && /bin/bash openssl_10.sh
+	fi
+
+	if [ "$sysName" == "Darwin" ] ;then 
+		LIB_DEPEND_DIR=`brew info openssl@1.1 | grep /usr/local/Cellar/openssl | cut -d \  -f 1 | awk 'END {print}'`
+		export PKG_CONFIG_PATH=$LIB_DEPEND_DIR/lib/pkgconfig
 	fi
 
 	if [ ! -f "$extFile" ];then
 
 		if [ ! -d $sourcePath/php${version}/ext ];then
-			cd $serverPath/mdserver-web/plugins/php && /bin/bash install.sh install ${version}
+			cd ${rootPath}/plugins/php && /bin/bash install.sh install ${version}
 		fi
 
 		cd $sourcePath/php${version}/ext/${LIBNAME}

@@ -10,10 +10,20 @@ serverPath=$(dirname "$rootPath")
 install_tmp=${rootPath}/tmp/mw_install.pl
 
 
+if [ -f ${rootPath}/bin/activate ];then
+	source ${rootPath}/bin/activate
+fi
+
+if [ "$sys_os" == "Darwin" ];then
+	BAK='_bak'
+else
+	BAK=''
+fi
+
 sysName=`uname`
 echo "use system: ${sysName}"
 
-if [ ${sysName} == "Darwin" ]; then
+if [ "${sysName}" == "Darwin" ]; then
 	OSNAME='macos'
 elif grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
 	OSNAME='centos'
@@ -51,13 +61,7 @@ Install_phpmyadmin()
 
 	cp -r $serverPath/source/phpmyadmin/$FDIR $serverPath/phpmyadmin/
 	cd $serverPath/phpmyadmin/ && mv $FDIR phpmyadmin
-	
-	mkdir -p  $serverPath/phpmyadmin/tmp
-	chown -R www:www $serverPath/phpmyadmin/tmp
 
-	if [ "$OSNAME" != 'macos' ];then
-		chown -R www:www $serverPath/phpmyadmin/tmp
-	fi
 
 	echo "${1}" > ${serverPath}/phpmyadmin/version.pl
 	echo '安装完成' > $install_tmp

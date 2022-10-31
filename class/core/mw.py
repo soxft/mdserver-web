@@ -161,19 +161,24 @@ def isInstalledWeb():
 
 
 def restartWeb():
+    return opWeb("reload")
+
+
+def opWeb(method):
     if not isInstalledWeb():
         return False
 
     # systemd
     systemd = '/lib/systemd/system/openresty.service'
     if os.path.exists(systemd):
-        execShell('systemctl restart openresty')
+        execShell('systemctl ' + method + ' openresty')
         return True
 
     # initd
     initd = getServerDir() + '/openresty/init.d/openresty'
+
     if os.path.exists(initd):
-        execShell(initd + ' ' + 'restart')
+        execShell(initd + ' ' + method)
         return True
 
     return False
@@ -406,6 +411,32 @@ def writeFile(filename, str):
         return False
 
 
+def backFile(file, act=None):
+    """
+        @name 备份配置文件
+        @param file 需要备份的文件
+        @param act 如果存在，则备份一份作为默认配置
+    """
+    file_type = "_bak"
+    if act:
+        file_type = "_def"
+
+    # print("cp -p {0} {1}".format(file, file + file_type))
+    execShell("cp -p {0} {1}".format(file, file + file_type))
+
+
+def restoreFile(file, act=None):
+    """
+        @name 还原配置文件
+        @param file 需要还原的文件
+        @param act 如果存在，则还原默认配置
+    """
+    file_type = "_bak"
+    if act:
+        file_type = "_def"
+    execShell("cp -p {1} {0}".format(file, file + file_type))
+
+
 def HttpGet(url, timeout=10):
     """
     发送GET请求
@@ -528,7 +559,7 @@ def getSpeed():
     return json.loads(data)
 
 
-def getLastLine(inputfile, lineNum):
+def getLastLineBk(inputfile, lineNum):
     # 读文件指定倒数行数
     try:
         fp = open(inputfile, 'rb')
@@ -561,7 +592,7 @@ def getLastLine(inputfile, lineNum):
         # return getMsg('TASK_SLEEP')
 
 
-def getNumLines(path, num, p=1):
+def getLastLine(path, num, p=1):
     pyVersion = sys.version_info[0]
     try:
         import html
@@ -571,12 +602,14 @@ def getNumLines(path, num, p=1):
         count = start_line + num
         fp = open(path, 'rb')
         buf = ""
-        fp.seek(-1, 2)
+
+        fp.seek(0, 2)
         if fp.read(1) == "\n":
-            fp.seek(-1, 2)
+            fp.seek(0, 2)
         data = []
         b = True
         n = 0
+
         for i in range(count):
             while True:
                 newline_pos = str.rfind(str(buf), "\n")
@@ -600,7 +633,7 @@ def getNumLines(path, num, p=1):
                     t_buf = fp.read(to_read)
                     if pyVersion == 3:
                         if type(t_buf) == bytes:
-                            t_buf = t_buf.decode('utf-8')
+                            t_buf = t_buf.decode("utf-8", "ignore").strip()
                     buf = t_buf + buf
                     fp.seek(-to_read, 1)
                     if pos - to_read == 0:
@@ -609,7 +642,7 @@ def getNumLines(path, num, p=1):
                 break
         fp.close()
     except Exception as e:
-        return ''
+        return str(e)
 
     return "\n".join(data)
 
@@ -693,7 +726,7 @@ def checkIp(ip):
 
 def checkPort(port):
     # 检查端口是否合法
-    ports = ['21', '25', '7200', '888']
+    ports = ['21', '25', '443', '888']
     if port in ports:
         return False
     intport = int(port)
@@ -714,13 +747,24 @@ def getStrBetween(startStr, endStr, srcStr):
 
 
 def getCpuType():
+    cpuType = ''
+    if isAppleSystem():
+        cmd = "system_profiler SPHardwareDataType | grep 'Processor Name' | awk -F ':' '{print $2}'"
+        cpuinfo = execShell(cmd)
+        return cpuinfo[0].strip()
+
     # 取CPU类型
     cpuinfo = open('/proc/cpuinfo', 'r').read()
     rep = "model\s+name\s+:\s+(.+)"
-    tmp = re.search(rep, cpuinfo)
-    cpuType = None
+    tmp = re.search(rep, cpuinfo, re.I)
     if tmp:
         cpuType = tmp.groups()[0]
+    else:
+        cpuinfo = execShell('LANG="en_US.UTF-8" && lscpu')[0]
+        rep = "Model\s+name:\s+(.+)"
+        tmp = re.search(rep, cpuinfo, re.I)
+        if tmp:
+            cpuType = tmp.groups()[0]
     return cpuType
 
 
@@ -765,7 +809,7 @@ def makeConf():
     file = getRunDir() + '/data/json/config.json'
     if not os.path.exists(file):
         c = {}
-        c['title'] = 'mdserver-web | linux面板'
+        c['title'] = '祖龙面板'
         c['home'] = 'http://github/midoks/mdserver-web'
         c['recycle_bin'] = True
         c['template'] = 'default'

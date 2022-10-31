@@ -24,14 +24,14 @@ function getLogs(id){
 			title:lan.crontab.task_log_title,
 			area: ['60%','500px'], 
 			shadeClose:false,
-			closeBtn:2,
+			closeBtn:1,
 			content:'<div class="setchmod bt-form pd20 pb70">'
-					+'<pre id="crontab-log" style="overflow: auto; border: 0px none; line-height:23px;padding: 15px; margin: 0px; white-space: pre-wrap; height: 405px; background-color: rgb(51,51,51);color:#f1f1f1;border-radius:0px;font-family:"></pre>'
-					+'<div class="bt-form-submit-btn" style="margin-top: 0px;">'
-					+'<button type="button" class="btn btn-success btn-sm" onclick="closeLogs('+id+')">清空</button>'
-					+'<button type="button" class="btn btn-danger btn-sm" onclick="layer.closeAll()">关闭</button>'
-				    +'</div>'
-					+'</div>'
+				+'<pre id="crontab-log" style="overflow: auto; border: 0px none; line-height:23px;padding: 15px; margin: 0px; white-space: pre-wrap; height: 405px; background-color: rgb(51,51,51);color:#f1f1f1;border-radius:0px;font-family:"></pre>'
+				+'<div class="bt-form-submit-btn" style="margin-top: 0px;">'
+				+'<button type="button" class="btn btn-success btn-sm" onclick="closeLogs('+id+')">清空</button>'
+				+'<button type="button" class="btn btn-danger btn-sm" onclick="layer.closeAll()">关闭</button>'
+			    +'</div>'
+			+'</div>'
 		});
 
 		setTimeout(function(){
@@ -54,41 +54,60 @@ function getCronData(page){
 				'<span class="btOpen" onclick="setTaskStatus(' + rdata.data[i].id + ',0)" style="color:rgb(92, 184, 92);cursor:pointer" title="停用该计划任务">正常<span class="glyphicon glyphicon-play"></span></span>' 
 				:'<span onclick="setTaskStatus('+ rdata.data[i].id +',1)" class="btClose" style="color:red;cursor:pointer" title="启用该计划任务">停用<span style="color:rgb(255, 0, 0);" class="glyphicon glyphicon-pause"></span></span>';
 
-				cbody += "<tr>\
-							<td><input type='checkbox' onclick='checkSelect();' title='"+rdata.data[i].name+"' name='id' value='"+rdata.data[i].id+"'></td>\
-							<td>"+rdata.data[i].name+"</td>\
-							<td>"+status+"</td>\
-							<td>"+rdata.data[i].type+"</td>\
-							<td>"+rdata.data[i].cycle+"</td>\
-							<td>-</td>\
-							<td>--</td>\
-							<td>"+rdata.data[i].addtime+"</td>\
-							<td>\
-								<a href=\"javascript:startTask("+rdata.data[i].id+");\" class='btlink'>执行</a> | \
-								<a href=\"javascript:editTaskInfo('"+rdata.data[i].id+"');\" class='btlink'>编辑</a> | \
-								<a href=\"javascript:getLogs("+rdata.data[i].id+");\" class='btlink'>日志</a> | \
-								<a href=\"javascript:planDel("+rdata.data[i].id+" ,'"+rdata.data[i].name.replace('\\','\\\\').replace("'","\\'").replace('"','')+"');\" class='btlink'>删除</a>\
-							</td>\
-						</tr>";
+
+				var cron_save = '--';
+				if (rdata.data[i]['save'] != ''){
+					cron_save = rdata.data[i]['save']+'份';
+				}
+
+				var cron_backupto = '-';
+				if (rdata.data[i]['stype'] == 'site' || rdata.data[i]['stype']=='database' ){
+					cron_backupto = '本地磁盘';
+					if (rdata.data[i]['backup_to'] != 'localhost'){
+						cron_backupto = rdata.data[i]['backup_to'];
+					}
+				}
+
+				cbody += "<tr><td><input type='checkbox' onclick='checkSelect();' title='"+rdata.data[i].name+"' name='id' value='"+rdata.data[i].id+"'></td>\
+					<td>"+rdata.data[i].name+"</td>\
+					<td>"+status+"</td>\
+					<td>"+rdata.data[i].type+"</td>\
+					<td>"+rdata.data[i].cycle+"</td>\
+					<td>"+cron_save +"</td>\
+					<td>"+cron_backupto+"</td>\
+					<td>"+rdata.data[i].addtime+"</td>\
+					<td>\
+						<a href=\"javascript:startTask("+rdata.data[i].id+");\" class='btlink'>执行</a> | \
+						<a href=\"javascript:editTaskInfo('"+rdata.data[i].id+"');\" class='btlink'>编辑</a> | \
+						<a href=\"javascript:getLogs("+rdata.data[i].id+");\" class='btlink'>日志</a> | \
+						<a href=\"javascript:planDel("+rdata.data[i].id+" ,'"+rdata.data[i].name.replace('\\','\\\\').replace("'","\\'").replace('"','')+"');\" class='btlink'>删除</a>\
+					</td>\
+				</tr>";
 			}
 		}
 		$('#cronbody').html(cbody);
-		$('#softPage').html(rdata.list)
+		$('#softPage').html(rdata.list);
 	},'json');
 }
 
 // 设置计划任务状态
 function setTaskStatus(id,status){
-	var confirm = layer.confirm(status == '0'?'计划任务暂停后将无法继续运行，您真的要停用这个计划任务吗？':'该计划任务已停用，是否要启用这个计划任务', {title:'提示',icon:3,closeBtn:2},function(index) {
+	var confirm = layer.confirm(status == '0'?'计划任务暂停后将无法继续运行，您真的要停用这个计划任务吗？':'该计划任务已停用，是否要启用这个计划任务', {title:'提示',icon:3,closeBtn:1},function(index) {
 		if (index > 0) {
 			var loadT = layer.msg('正在设置状态，请稍后...',{icon:16,time:0,shade: [0.3, '#000']});
 			$.post('/crontab/set_cron_status',{id:id},function(rdata){
-				layer.closeAll();
-				layer.close(confirm);
-				layer.msg(rdata.data,{icon:rdata.status?1:2});
-				if(rdata.status) {
-					getCronData(1);
+
+				if (!rdata.status){
+					layer.msg(rdata.msg,{icon:rdata.status?1:2});
+					return;
 				}
+
+				showMsg(rdata.msg,function(){
+					layer.close(loadT);
+					layer.close(confirm);
+					getCronData(1);
+				},{icon:rdata.status?1:2},2000);
+
 			},'json');
 		}
 	});
@@ -96,22 +115,24 @@ function setTaskStatus(id,status){
 
 //执行任务脚本
 function startTask(id){
-	layer.msg('正在处理,请稍候...',{icon:16,time:0,shade: [0.3, '#000']});
+	var loadT = layer.msg('正在处理,请稍候...',{icon:16,time:0,shade: [0.3, '#000']});
 	var data='id='+id;
 	$.post('/crontab/start_task',data,function(rdata){
-		layer.closeAll();
-		layer.msg(rdata.msg,{icon:rdata.status?1:2});
+		showMsg(rdata.msg, function(){
+			layer.closeAll();
+		},{icon:rdata.status?1:2,time:2000});
 	},'json');
 }
 
 
 //清空日志
 function closeLogs(id){
-	layer.msg('正在处理,请稍候...',{icon:16,time:0,shade: [0.3, '#000']});
+	var loadT = layer.msg('正在处理,请稍候...',{icon:16,time:0,shade: [0.3, '#000']});
 	var data='id='+id;
 	$.post('/crontab/del_logs',data,function(rdata){
-		layer.closeAll();
-		layer.msg(rdata.msg,{icon:rdata.status?1:2});
+		showMsg(rdata.msg, function(){
+			layer.closeAll();
+		},{icon:rdata.status?1:2,time:2000});
 	},'json');
 }
 
@@ -122,61 +143,13 @@ function planDel(id,name){
 		var load = layer.msg('正在处理,请稍候...',{icon:16,time:0,shade: [0.3, '#000']});
 		var data='id='+id;
 		$.post('/crontab/del',data,function(rdata){
-			layer.close(load);
 			showMsg(rdata.msg, function(){
+				layer.closeAll();
 				getCronData(1);
 			},{icon:rdata.status?1:2,time:2000});
 		},'json');
 	});
 }
-
-//批量删除
-function allDeleteCron(){
-	var checkList = $("input[name=id]");
-	var dataList = new Array();
-	for(var i=0;i<checkList.length;i++){
-		if(!checkList[i].checked) continue;
-		var tmp = new Object();
-		tmp.name = checkList[i].title;
-		tmp.id = checkList[i].value;
-		dataList.push(tmp);
-	}
-	safeMessage('批量删除任务!',"<a style='color:red;'>"+lan.get('del_all_task',[dataList.length])+"</a>",function(){
-		layer.closeAll();
-		syncDeleteCron(dataList,0,'');
-	});
-}
-
-//模拟同步开始批量删除数据库
-function syncDeleteCron(dataList,successCount,errorMsg){
-	if(dataList.length < 1) {
-		layer.msg(lan.get('del_all_task_ok',[successCount]),{icon:1});
-		return;
-	}
-	var loadT = layer.msg(lan.get('del_all_task_the',[dataList[0].name]),{icon:16,time:0,shade: [0.3, '#000']});
-	$.ajax({
-			type:'POST',
-			url:'/crontab?action=DelCrontab',
-			data:'id='+dataList[0].id+'&name='+dataList[0].name,
-			async: true,
-			success:function(frdata){
-				layer.close(loadT);
-				if(frdata.status){
-					successCount++;
-					$("input[title='"+dataList[0].name+"']").parents("tr").remove();
-				}else{
-					if(!errorMsg){
-						errorMsg = '<br><p>'+lan.crontab.del_task_err+'</p>';
-					}
-					errorMsg += '<li>'+dataList[0].name+' -> '+frdata.msg+'</li>'
-				}
-				
-				dataList.splice(0,1);
-				syncDeleteCron(dataList,successCount,errorMsg);
-			}
-	});
-}
-
 	
 function isURL(str_url){
 	var strRegex = '^(https|http|ftp|rtsp|mms)?://.+';
@@ -201,8 +174,7 @@ function planAdd(){
 	
 	var type = $(".plancycle").find("b").attr("val");
 	$("#set-Config input[name='type']").val(type);
-	
-	var where1 = $("#ptime input[name='where1']").val();
+
 	
 	var is1;
 	var is2 = 1;
@@ -221,14 +193,14 @@ function planAdd(){
 			break;
 	}
 	
+	var where1 = $('#excode_week b').attr('val');
+	$("#set-Config input[name='where1']").val(where1);
+
 	if(where1 > is1 || where1 < is2){
 		$("#ptime input[name='where1']").focus();
 		layer.msg('表单不合法,请重新输入!',{icon:2});
 		return;
 	}
-	
-	where1 = $('#excode_week b').attr('val');
-	$("#set-Config input[name='where1']").val(where1);
 	
 	var hour = $("#ptime input[name='hour']").val();
 	if(hour > 23 || hour < 0){
@@ -304,20 +276,37 @@ function planAdd(){
 		allAddCrontab(dataList,0,'');
 		return;
 	}
+
+	if (type == 'minute-n'){
+		var where1 = $("#ptime input[name='where1']").val();
+		$("#set-Config input[name='where1']").val(where1);
+	}
+
+	if (type == 'day-n'){
+		var where1 = $("#ptime input[name='where1']").val();
+		$("#set-Config input[name='where1']").val(where1);
+	}
+
+	if (type == 'hour-n'){
+		var where1 = $("#ptime input[name='where1']").val();
+		$("#set-Config input[name='hour']").val(where1);
+	}
 	
 	$("#set-Config input[name='sName']").val(sName);
 	layer.msg('正在添加,请稍候...!',{icon:16,time:0,shade: [0.3, '#000']});
 	var data = $("#set-Config").serialize() + '&sBody='+sBody + '&urladdress=' + urladdress;
-
-	console.log(data);
+	// console.log(data);
 	$.post('/crontab/add',data,function(rdata){
 		if(!rdata.status) {
 			layer.msg(rdata.msg,{icon:2, time:2000});
 			return;
 		}
-		layer.closeAll();
-		layer.msg(rdata.msg,{icon:rdata.status?1:2});
-		getCronData(1);
+
+		showMsg(rdata.msg, function(){
+			layer.closeAll();
+			getCronData(1);
+		},{icon:rdata.status?1:2}, 2000);
+
 	},'json');
 }
 
@@ -344,25 +333,25 @@ function allAddCrontab(dataList,successCount,errorMsg){
 	$("#set-Config input[name='sName']").val(dataList[0]);
 	var pdata = $("#set-Config").serialize() + '&sBody=&urladdress=';
 	$.ajax({
-			type:'POST',
-			url:'/crontab/add',
-			data:pdata,
-			async: true,
-			success:function(frdata){
-				layer.close(loadT);
-				if(frdata.status){
-					successCount++;
-					getCronData(1);
-				}else{
-					if(!errorMsg){
-						errorMsg = '<br><p>'+lan.crontab.backup_all_err+'</p>';
-					}
-					errorMsg += '<li>'+dataList[0]+' -> '+frdata.msg+'</li>'
+		type:'POST',
+		url:'/crontab/add',
+		data:pdata,
+		async: true,
+		success:function(frdata){
+			layer.close(loadT);
+			if(frdata.status){
+				successCount++;
+				getCronData(1);
+			}else{
+				if(!errorMsg){
+					errorMsg = '<br><p>'+lan.crontab.backup_all_err+'</p>';
 				}
-				
-				dataList.splice(0,1);
-				allAddCrontab(dataList,successCount,errorMsg);
+				errorMsg += '<li>'+dataList[0]+' -> '+frdata.msg+'</li>'
 			}
+			
+			dataList.splice(0,1);
+			allAddCrontab(dataList,successCount,errorMsg);
+		}
 	});
 }
 
@@ -592,7 +581,7 @@ function editTaskInfo(id){
 				area: ['850px','450px'], 
 				skin:'layer-create-content',
 				shadeClose:false,
-				closeBtn:2,
+				closeBtn:1,
 				content:'<div class="setting-con ptb20">\
 							<div class="clearfix plan ptb10">\
 								<span class="typename c4 pull-left f14 text-right mr20">任务类型</span>\
@@ -811,12 +800,20 @@ function editTaskInfo(id){
 						obj.from.where1 = obj.from.minute;
 						obj.from.minute = '';
 					}
-					layer.msg('正在保存编辑内容，请稍后...',{icon:16,time:0,shade: [0.3, '#000']});
+					var loadT = layer.msg('正在保存编辑内容，请稍后...',{icon:16,time:0,shade: [0.3, '#000']});
 					$.post('/crontab/modify_crond',obj.from,function(rdata){
-						layer.closeAll();
-						getCronData(1);
-						layer.msg(rdata.msg,{icon:rdata.status?1:2});
-						initDropdownMenu();
+
+						if (!rdata.status){
+							layer.msg(rdata.msg,{icon:rdata.status?1:2});
+							return;
+						}
+
+						showMsg(rdata.msg, function(){
+							layer.closeAll();
+							getCronData(1);
+							initDropdownMenu();
+						},{icon:rdata.status?1:2}, 2000);
+
 					},'json');
 				});
 			},100);

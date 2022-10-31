@@ -19,7 +19,6 @@ if [ "$EUID" -ne 0 ]
 fi
 
 
-
 if [ ${_os} == "Darwin" ]; then
 	OSNAME='macos'
 elif grep -Eq "openSUSE" /etc/*-release; then
@@ -27,10 +26,6 @@ elif grep -Eq "openSUSE" /etc/*-release; then
 	zypper refresh
 elif grep -Eq "FreeBSD" /etc/*-release; then
 	OSNAME='freebsd'
-	pkg install -y wget unzip
-elif grep -Eqi "Arch" /etc/issue || grep -Eq "Arch" /etc/*-release; then
-	OSNAME='arch'
-	echo y | pacman -Sy unzip
 elif grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
 	OSNAME='centos'
 	yum install -y wget zip unzip
@@ -42,6 +37,9 @@ elif grep -Eqi "Rocky" /etc/issue || grep -Eq "Rocky" /etc/*-release; then
 	yum install -y wget zip unzip
 elif grep -Eqi "AlmaLinux" /etc/issue || grep -Eq "AlmaLinux" /etc/*-release; then
 	OSNAME='alma'
+	yum install -y wget zip unzip
+elif grep -Eqi "Amazon Linux" /etc/issue || grep -Eq "Amazon Linux" /etc/*-release; then
+	OSNAME='amazon'
 	yum install -y wget zip unzip
 elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
 	OSNAME='debian'
@@ -73,15 +71,12 @@ if [ $OSNAME != "macos" ];then
 fi
 
 echo "use system version: ${OSNAME}"
-
-
-# cd /www/server/mdserver-web && bash ./scripts/install/debian.sh
 cd /www/server/mdserver-web && bash scripts/install/${OSNAME}.sh
-# curl -fsSL https://raw.githubusercontent.com/midoks/mdserver-web/dev/scripts/install/${OSNAME}.sh | bash
 
-chmod +x /www/server/mdserver-web/mw-cli
-if [ ! -e /usr/bin/mw-cli ]; then 
-	ln -s /www/server/mdserver-web/mw-cli /usr/bin/mw-cli
+if [ ! -e /usr/bin/mw ]; then
+	if [ -f /etc/init.d/mw ];then
+		ln -s /etc/init.d/mw /usr/bin/mw
+	fi
 fi
 
 endTime=`date +%s`

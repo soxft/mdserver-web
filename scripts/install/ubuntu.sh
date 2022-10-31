@@ -1,13 +1,13 @@
 #!/bin/bash
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
-LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
+export DEBIAN_FRONTEND=noninteractive
 
 if grep -Eq "Ubuntu" /etc/*-release; then
     sudo ln -sf /bin/bash /bin/sh
     #sudo dpkg-reconfigure dash
 fi
-
 
 apt update -y
 apt-get update -y 
@@ -24,6 +24,10 @@ if [ ! -d /root/.acme.sh ];then
 	curl  https://get.acme.sh | sh
 fi
 
+apt install -y locate
+locale-gen en_US.UTF-8
+localedef -v -c -i en_US -f UTF-8 en_US.UTF-8
+
 
 if [ -f /usr/sbin/ufw ];then
 
@@ -31,7 +35,7 @@ if [ -f /usr/sbin/ufw ];then
 	ufw allow 80/tcp
 	ufw allow 443/tcp
 	ufw allow 888/tcp
-	ufw allow 7200/tcp
+	# ufw allow 7200/tcp
 	# ufw allow 3306/tcp
 	# ufw allow 30000:40000/tcp
 
@@ -51,7 +55,7 @@ if [ ! -f /usr/sbin/ufw ];then
 	firewall-cmd --permanent --zone=public --add-port=80/tcp
 	firewall-cmd --permanent --zone=public --add-port=443/tcp
 	firewall-cmd --permanent --zone=public --add-port=888/tcp
-	firewall-cmd --permanent --zone=public --add-port=7200/tcp
+	# firewall-cmd --permanent --zone=public --add-port=7200/tcp
 	# firewall-cmd --permanent --zone=public --add-port=3306/tcp
 	# firewall-cmd --permanent --zone=public --add-port=30000-40000/tcp
 
@@ -76,6 +80,7 @@ apt install -y patchelf
 
 VERSION_ID=`cat /etc/*-release | grep VERSION_ID | awk -F = '{print $2}' | awk -F "\"" '{print $2}'`
 if [ "${VERSION_ID}" == "22.04" ];then
+	apt install -y python3-cffi
     pip3 install -U --force-reinstall --no-binary :all: gevent
 fi
 
@@ -87,6 +92,7 @@ else
 fi
 
 if [ "${VERSION_ID}" == "22.04" ];then
+	apt install -y python3-cffi
     pip3 install -U --force-reinstall --no-binary :all: gevent
 fi
 
