@@ -65,6 +65,7 @@ function getLoad(data) {
 $('#LoadList .circle').click(function() {
     getNet();
 });
+
 $('#LoadList .mask').hover(function() {
     var one, five, fifteen;
     var that = this;
@@ -76,6 +77,32 @@ $('#LoadList .mask').hover(function() {
 }, function() {
     layer.closeAll('tips');
 });
+
+
+function showCpuTips(rdata){
+    $('#cpuChart .mask').unbind();
+    $('#cpuChart .mask').hover(function() {
+        var cpuText = '';
+
+        if (rdata.cpu[2].length == 1){
+            var cpuUse = parseFloat(rdata.cpu[2][0] == 0 ? 0 : rdata.cpu[2][0]).toFixed(1);
+            cpuText += 'CPU-1：' + cpuUse + '%'
+        } else{
+            for (var i = 1; i < rdata.cpu[2].length + 1; i++) {
+              var cpuUse = parseFloat(rdata.cpu[2][i - 1] == 0 ? 0 : rdata.cpu[2][i - 1]).toFixed(1);
+              if (i % 2 != 0) {
+                cpuText += 'CPU-' + i + '：' + cpuUse + '%&nbsp;|&nbsp;'
+              } else {
+                cpuText += 'CPU-' + i + '：' + cpuUse + '%'
+                cpuText += '\n'
+              }
+            } 
+        }
+        layer.tips(rdata.cpu[3] + "</br>" + rdata.cpu[5] + "个物理CPU，" + (rdata.cpu[4]) + "个物理核心，" + rdata.cpu[1] + "个逻辑核心</br>" + cpuText, this, { time: 0, tips: [1, '#999'] });
+    }, function() {
+        layer.closeAll('tips');
+    });
+}
 
 
 function rocket(sum, m) {
@@ -249,9 +276,11 @@ function setcolor(pre, s, s1, s2, s3) {
     co.parent('.circle').css("background", LoadColor);
 }
 
+
+
+
 function getNet() {
-    var up;
-    var down;
+    var up, down;
     $.get("/system/network", function(net) {
         $("#InterfaceSpeed").html(lan.index.interfacespeed + "： 1.0Gbps");
         $("#upSpeed").html(net.up + ' KB');
@@ -269,6 +298,8 @@ function getNet() {
     
         // setMemImg(net.mem);
         setImg();
+
+        showCpuTips(net);
     },'json');
 }
 
@@ -457,6 +488,8 @@ function setImg() {
             $(this).find('.left').css('transform', "rotate(" + (num - 180) + "deg)");
         };
     });
+
+    $('.diskbox .mask').unbind();
     $('.diskbox .mask').hover(function() {
         layer.closeAll('tips');
         var that = this;
@@ -478,16 +511,7 @@ setTimeout(function() {
             $('#toUpdate a').css("position","relative");
             return;
         }
-        // $.get('/system?action=ReWeb', function() {});
-        // layer.msg(rdata.msg, { icon: 1 });
-        // setTimeout(function() {
-        //     window.location.reload();
-        // }, 3000);
     },'json').error(function() {
-        // $.get('/system?action=ReWeb', function() {});
-        // setTimeout(function() {
-        //     window.location.reload();
-        // }, 3000);
     });
 }, 3000);
 
@@ -503,7 +527,7 @@ function checkUpdate() {
         }
 
         if (rdata.status === false) {
-            layer.confirm(rdata.msg, { title: lan.index.update_check, icon: 1, closeBtn: 2, btn: [lan.public.know, lan.public.close] });
+            layer.confirm(rdata.msg, { title: lan.index.update_check, icon: 1, closeBtn: 1, btn: [lan.public.know, lan.public.close] });
             return;
         }
         layer.msg(rdata.msg, { icon: 1 });
@@ -586,7 +610,7 @@ function reBoot() {
         type: 1,
         title: '重启服务器或者面板',
         area: '330px',
-        closeBtn: 2,
+        closeBtn: 1,
         shadeClose: false,
         content: '<div class="rebt-con"><div class="rebt-li"><a data-id="server" href="javascript:;">重启服务器</a></div><div class="rebt-li"><a data-id="panel" href="javascript:;">重启面板</a></div></div>'
     });
@@ -596,7 +620,7 @@ function reBoot() {
         var type = $(this).attr('data-id');
         switch (type) {
             case 'panel':
-                layer.confirm('即将重启面板服务，继续吗？', { title: '重启面板服务', closeBtn: 2, icon: 3 }, function () {
+                layer.confirm('即将重启面板服务，继续吗？', { title: '重启面板服务', closeBtn: 1, icon: 3 }, function () {
                     var loadT = layer.load();
                     $.post('/system/restart','',function (rdata) {
                         layer.close(loadT);
@@ -610,7 +634,7 @@ function reBoot() {
                     type: 1,
                     title: '安全重启服务器',
                     area: ['500px', '280px'],
-                    closeBtn: 2,
+                    closeBtn: 1,
                     shadeClose: false,
                     content: "<div class='bt-form bt-window-restart'>\
                             <div class='pd15'>\
@@ -668,7 +692,7 @@ function reBoot() {
 
 //修复面板
 function repPanel() {
-    layer.confirm(lan.index.rep_panel_msg, { title: lan.index.rep_panel_title, closeBtn: 2, icon: 3 }, function() {
+    layer.confirm(lan.index.rep_panel_msg, { title: lan.index.rep_panel_title, closeBtn: 1, icon: 3 }, function() {
         var loadT = layer.msg(lan.index.rep_panel_the, { icon: 16, time: 0, shade: [0.3, '#000'] });
         $.get('/system?action=RepPanel', function(rdata) {
             layer.close(loadT);
@@ -726,7 +750,7 @@ function showDanger(num, port) {
         type: 1,
         area: ['720px', '410px'],
         title: '安全提醒(如你想放弃任何安全提醒通知，请删除宝塔安全登录插件)',
-        closeBtn: 2,
+        closeBtn: 1,
         shift: 5,
         content: '<div class="pd20">\
 				<table class="f14 showDanger"><tbody>\
@@ -745,7 +769,7 @@ function showDanger(num, port) {
 //加载关键数据总数
 loadKeyDataCount();
 function loadKeyDataCount(){
-    var plist = ['mysql', 'csvn', 'gogs'];
+    var plist = ['mysql', 'gogs','gitea'];
     for (var i = 0; i < plist.length; i++) {
         pname = plist[i];
         function call(pname){
@@ -760,7 +784,7 @@ function loadKeyDataCount(){
                 }
                 var html = '<li class="sys-li-box col-xs-3 col-sm-3 col-md-3 col-lg-3">\
                             <p class="name f15 c9">'+pname+'</p>\
-                            <div class="val"><a class="btlink" onclick="softMain(\''+pname+'\',\''+rdata['data']['ver']+'\')">'+rdata['data']['count']+'</a></div></li>';
+                            <div class="val"><a class="btlink" onclick="softMain(\''+pname+'\',\''+pname+'\',\''+rdata['data']['ver']+'\')">'+rdata['data']['count']+'</a></div></li>';
                 $('#index_overview').append(html);
             },'json');
         }

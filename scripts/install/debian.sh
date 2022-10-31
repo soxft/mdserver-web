@@ -1,7 +1,7 @@
 #!/bin/bash
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
-LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
 
 # RED='\e[1;31m'    # 红色
 # GREEN='\e[1;32m'  # 绿色
@@ -15,6 +15,10 @@ LANG=en_US.UTF-8
 if grep -Eq "Debian" /etc/*-release; then
     ln -sf /bin/bash /bin/sh
 fi
+
+# synchronize time first
+apt-get install ntpdate -y
+ntpdate time.nist.gov | logger -t NTP
 
 apt update -y
 apt-get update -y 
@@ -41,7 +45,7 @@ if [ -f /usr/sbin/ufw ];then
 	ufw allow 80/tcp
 	ufw allow 443/tcp
 	ufw allow 888/tcp
-	ufw allow 7200/tcp
+	# ufw allow 7200/tcp
 	# ufw allow 3306/tcp
 	# ufw allow 30000:40000/tcp
 
@@ -63,7 +67,7 @@ if [ ! -f /usr/sbin/ufw ];then
 	firewall-cmd --permanent --zone=public --add-port=80/tcp
 	firewall-cmd --permanent --zone=public --add-port=443/tcp
 	firewall-cmd --permanent --zone=public --add-port=888/tcp
-	firewall-cmd --permanent --zone=public --add-port=7200/tcp
+	# firewall-cmd --permanent --zone=public --add-port=7200/tcp
 	# firewall-cmd --permanent --zone=public --add-port=3306/tcp
 	# firewall-cmd --permanent --zone=public --add-port=30000-40000/tcp
 
@@ -112,10 +116,20 @@ apt install -y libxpm-dev
 apt install -y libwebp-dev
 apt install -y libfreetype6-dev
 
+sudo localedef -i en_US -f UTF-8 en_US.UTF-8
+
+VERSION_ID=`cat /etc/*-release | grep VERSION_ID | awk -F = '{print $2}' | awk -F "\"" '{print $2}'`
+if [ "$VERSION_ID" == "9" ];then
+	sed "s/flask==2.0.3/flask==1.1.1/g" -i /www/server/mdserver-web/requirements.txt
+	sed "s/cryptography==3.3.2/cryptography==2.5/g" -i /www/server/mdserver-web/requirements.txt
+	sed "s/configparser==5.2.0/configparser==4.0.2/g" -i /www/server/mdserver-web/requirements.txt
+	sed "s/flask-socketio==5.2.0/flask-socketio==4.2.0/g" -i /www/server/mdserver-web/requirements.txt
+	sed "s/python-engineio==4.3.2/python-engineio==3.9.0/g" -i /www/server/mdserver-web/requirements.txt
+	# pip3 install -r /www/server/mdserver-web/requirements.txt
+fi
+
 cd /www/server/mdserver-web/scripts && bash lib.sh
 chmod 755 /www/server/mdserver-web/data
-
-
 
 cd /www/server/mdserver-web && ./cli.sh start
 isStart=`ps -ef|grep 'gunicorn -c setting.py app:app' |grep -v grep|awk '{print $2}'`

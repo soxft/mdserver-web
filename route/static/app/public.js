@@ -204,7 +204,7 @@ function changePath(d) {
 		type: 1,
 		area: "650px",
 		title: '选择目录',
-		closeBtn: 2,
+		closeBtn: 1,
 		shift: 5,
 		shadeClose: false,
 		content: "<div class='changepath'><div class='path-top'><button type='button' class='btn btn-default btn-sm' onclick='backFile()'><span class='glyphicon glyphicon-share-alt'></span>返回</button>\
@@ -548,16 +548,27 @@ function onlineEditFile(k, f) {
 		var m = "";
 		var o = "";
 		for(var p = 0; p < u.length; p++) {
-			m = s.encoding == u[p] ? "selected" : "";
-			n += '<option value="' + u[p] + '" ' + m + ">" + u[p] + "</option>"
+			m = s.data.encoding == u[p] ? "selected" : "";
+			n += '<option value="' + u[p] + '" ' + m + ">" + u[p] + "</option>";
 		}
 		var r = layer.open({
 			type: 1,
 			shift: 5,
-			closeBtn: 2,
+			closeBtn: 1,
 			area: ["90%", "90%"],
 			title: lan.bt.edit_title+"[" + f + "]",
-			content: '<form class="bt-form pd20 pb70"><div class="line"><p style="color:red;margin-bottom:10px">'+lan.bt.edit_ps+'			<select class="bt-input-text" name="encoding" style="width: 74px;position: absolute;top: 31px;right: 19px;height: 22px;z-index: 9999;border-radius: 0;">' + n + '</select></p><textarea class="mCustomScrollbar bt-input-text" id="textBody" style="width:100%;margin:0 auto;line-height: 1.8;position: relative;top: 10px;" value="" />			</div>			<div class="bt-form-submit-btn" style="position:absolute; bottom:0; width:100%">			<button type="button" class="btn btn-danger btn-sm btn-editor-close">'+lan.public.close+'</button>			<button id="OnlineEditFileBtn" type="button" class="btn btn-success btn-sm">'+lan.public.save+'</button>			</div>			</form>'
+			content: '<form class="bt-form pd20 pb70">\
+				<div class="line">\
+					<p style="color:red;margin-bottom:10px">' + lan.bt.edit_ps + '\
+						<select class="bt-input-text" name="encoding" style="width: 74px;position: absolute;top: 31px;right: 19px;height: 22px;z-index: 9999;border-radius: 0;">' + n + '</select>\
+					</p>\
+					<textarea class="mCustomScrollbar bt-input-text" id="textBody" style="width:100%;margin:0 auto;line-height: 1.8;position: relative;top: 10px;" value="" />\
+				</div>\
+				<div class="bt-form-submit-btn" style="position:absolute; bottom:0; width:100%">\
+				<button type="button" class="btn btn-danger btn-sm btn-editor-close">'+lan.public.close+'</button>\
+				<button id="OnlineEditFileBtn" type="button" class="btn btn-success btn-sm">'+lan.public.save+'</button>\
+				</div>\
+			</form>'
 		});
 		$("#textBody").text(s.data.data);
 		var q = $(window).height() * 0.9;
@@ -638,7 +649,7 @@ function safeMessage(j, h, g, f) {
 		type: 1,
 		title: j,
 		area: "350px",
-		closeBtn: 2,
+		closeBtn: 1,
 		shadeClose: true,
 		content: "<div class='bt-form webDelete pd20 pb70'><p>" + h + "</p>" + f + "<div class='vcode'>"+lan.bt.cal_msg+"<span class='text'>" + sumtext + "</span>=<input type='number' id='vcodeResult' value=''></div><div class='bt-form-submit-btn'><button type='button' class='btn btn-danger btn-sm bt-cancel'>"+lan.public.cancel+"</button> <button type='button' id='toSubmit' class='btn btn-success btn-sm' >"+lan.public.ok+"</button></div></div>"
 	});
@@ -718,7 +729,7 @@ $(function() {
 });
 
 $("#dologin").click(function() {
-	layer.confirm('您真的要退出面板吗?', {icon:3,closeBtn: 2}, function() {
+	layer.confirm('您真的要退出面板吗?', {icon:3,closeBtn: 1}, function() {
 		window.location.href = "/login?dologin=True"
 	});
 	return false
@@ -1030,7 +1041,7 @@ function bindPanel(a,type,ip,btid,url,user,pw){
 		type: 1,
 		area: "400px",
 		title: titleName,
-		closeBtn: 2,
+		closeBtn: 1,
 		shift: 5,
 		shadeClose: false,
 		content: "<div class='bt-form pd20 pb70'>\
@@ -1106,7 +1117,7 @@ function messageBox() {
 		type: 1,
 		title: '消息盒子',
 		area: "670px",
-		closeBtn: 2,
+		closeBtn: 1,
 		shadeClose: false,
 		content: '<div class="bt-form">\
 					<div class="bt-w-main">\
@@ -1459,7 +1470,7 @@ function webShell() {
         type: 1,
         title: "本地终端",
         area: ['685px','435px'],
-        closeBtn: 2,
+        closeBtn: 1,
         shadeClose: false,
         content: '<div class="term-box"><div id="term"></div></div>\
 					<div class="shell-text-input">\
@@ -1598,6 +1609,18 @@ function remove_ssh_menu() {
 }
 
 /*** 其中功能,针对插件通过库使用 start ***/
+
+//字符串转数组对象
+function toArrayObject(str){
+	var data = {};
+    kv = str.split('&');
+    for(i in kv){
+        v = kv[i].split('=');
+        data[v[0]] = v[1];
+    }
+    return data;
+}
+
 function pluginService(_name, version){
 	var data = {name:_name, func:'status'}
 	if ( typeof(version) != 'undefined' ){
@@ -1649,7 +1672,7 @@ function pluginOpService(a, b, v) {
         case "restart":d = '重启';break;
         case "reload":d = '重载';break;
     }
-    layer.confirm( msgTpl('您真的要{1}{2}{3}服务吗？', [d,a,v]), {icon:3,closeBtn: 2}, function() {
+    layer.confirm( msgTpl('您真的要{1}{2}{3}服务吗？', [d,a,v]), {icon:3,closeBtn: 1}, function() {
         var e = layer.msg(msgTpl('正在{1}{2}{3}服务,请稍候...',[d,a,v]), {icon: 16,time: 0});
         $.post("/plugins/run", c, function(g) {
             layer.close(e);
@@ -1698,12 +1721,22 @@ function pluginConfig(_name, version, func){
                 <ul class="help-info-text c7 ptb15">\
                     <li>此处为'+ _name + version +'主配置文件,若您不了解配置规则,请勿随意修改。</li>\
                 </ul>';
-    $(".soft-man-con").html(con);
+    
 
     var loadT = layer.msg('配置文件路径获取中...',{icon:16,time:0,shade: [0.3, '#000']});
     $.post('/plugins/run', {name:_name, func:func_name,version:version},function (data) {
         layer.close(loadT);
 
+        try{
+        	var jdata = $.parseJSON(data.data);
+        	if (!jdata['status']){
+        		layer.msg(jdata.msg,{icon:0,time:2000,shade: [0.3, '#000']});
+                return;
+        	}
+		}catch(err){/*console.log(err);*/}
+
+		$(".soft-man-con").html(con);
+		
         var loadT2 = layer.msg('文件内容获取中...',{icon:16,time:0,shade: [0.3, '#000']});
         var fileName = data.data;
         $.post('/files/get_body', 'path=' + fileName, function(rdata) {
@@ -1915,7 +1948,7 @@ function pluginOpInitD(a, _version, b) {
         case "initd_install":d = '加载';break;
         case "initd_uninstall":d = '卸载';break;
     }
-    layer.confirm( msgTpl('您真的要{1}{2}{3}服务吗？', [d,a,_version]), {icon:3,closeBtn: 2}, function() {
+    layer.confirm( msgTpl('您真的要{1}{2}{3}服务吗？', [d,a,_version]), {icon:3,closeBtn: 1}, function() {
         var e = layer.msg(msgTpl('正在{1}{2}{3}服务,请稍候...',[d,a,_version]), {icon: 16,time: 0});
         $.post("/plugins/run", c, function(g) {
             layer.close(e);
@@ -1956,6 +1989,15 @@ function pluginLogs(_name, version, func, line){
     var loadT = layer.msg('日志路径获取中...',{icon:16,time:0,shade: [0.3, '#000']});
     $.post('/plugins/run', {name:_name, func:func_name, version:version},function (data) {
         layer.close(loadT);
+
+        try{
+        	var jdata = $.parseJSON(data.data);
+        	if (!jdata['status']){
+        		layer.msg(jdata.msg,{icon:0,time:2000,shade: [0.3, '#000']});
+                return;
+        	}
+		}catch(err){/*console.log(err);*/}
+
 
         var loadT2 = layer.msg('文件内容获取中...',{icon:16,time:0,shade: [0.3, '#000']});
         var fileName = data.data;

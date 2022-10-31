@@ -36,14 +36,14 @@ function orPluginSetService(_name ,status, version){
         (status?'#20a53a;':'red;')+
         ' margin-left: 3px;" class="glyphicon ' + (status?'glyphicon glyphicon-play':'glyphicon-pause')+'"></span></p><div class="sfm-opt">\
             <button class="btn btn-default btn-sm" onclick="orPluginOpService(\''+_name+'\',\''+(status?'stop':'start')+'\',\''+version+'\')">'+(status?'停止':'启动')+'</button>\
-            <button class="btn btn-default btn-sm" onclick="orPluginOpService(\''+_name+'\',\'restart\',\''+version+'\')">重启</button>\
+            <button class="btn btn-default btn-sm" onclick="orPluginOpService(\''+_name+'\',\'restart\',\''+version+'\',\'yes\')">重启</button>\
             <button class="btn btn-default btn-sm" onclick="orPluginOpService(\''+_name+'\',\'reload\',\''+version+'\')">重载配置</button>\
         </div>'; 
     $(".soft-man-con").html(serviceCon);
 }
 
 
-function orPluginOpService(a, b, v) {
+function orPluginOpService(a, b, v,request_callback) {
 
     var c = "name=" + a + "&func=" + b;
     if(v != ''){
@@ -67,19 +67,25 @@ function orPluginOpService(a, b, v) {
                     layer.close(index);
                     var data = {'pwd':pwd};
                     c += '&args='+JSON.stringify(data);
-                    orPluginOpServiceOp(a,b,c,d,a,v);
+                    orPluginOpServiceOp(a,b,c,d,a,v,request_callback);
                 });
             } else {
-                orPluginOpServiceOp(a,b,c,d,a,v);
+                orPluginOpServiceOp(a,b,c,d,a,v,request_callback);
 
             }
         });
     })
 }
 
-function orPluginOpServiceOp(a,b,c,d,a,v){
+function orPluginOpServiceOp(a,b,c,d,a,v,request_callback){
+
+    var request_path = "/plugins/run";
+    if (request_callback == 'yes'){
+        request_path = "/plugins/callback";
+    }
+
     var e = layer.msg(msgTpl('正在{1}{2}{3}服务,请稍候...',[d,a,v]), {icon: 16,time: 0});
-    $.post("/plugins/run", c, function(g) {
+    $.post(request_path, c, function(g) {
         layer.close(e);
         
         var f = g.data == 'ok' ? msgTpl('{1}{2}服务已{3}',[a,v,d]) : msgTpl('{1}{2}服务{3}失败!',[a,v,d]);
@@ -97,9 +103,6 @@ function orPluginOpServiceOp(a,b,c,d,a,v){
             layer.msg(g.data, {icon: 2,time: 10000,shade: 0.3});
         }
 
-        // setTimeout(function(){
-        //     location.reload();
-        // },2000);
     },'json').error(function() {
         layer.close(e);
         layer.msg('操作异常!', {icon: 2});
@@ -108,8 +111,10 @@ function orPluginOpServiceOp(a,b,c,d,a,v){
 
 
 //查看Nginx负载状态
-function getOpenrestyStatus() {
+function getOpStatus() {
+    var loadT = layer.msg('正在处理，请稍后...', { icon: 16, time: 0, shade: 0.3 });
     $.post('/plugins/run', {name:'openresty', func:'run_info'}, function(data) {
+        layer.close(loadT);
         if (!data.status){
             showMsg(data.msg, function(){}, null,3000);
             return;
@@ -132,246 +137,77 @@ function getOpenrestyStatus() {
     },'json');
 }
 
-//nginx
-function nginxSoftMain(name, version) {
-    var loadT = layer.msg(lan.public.the, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.get('/system?action=GetConcifInfo', function(rdata) {
-        layer.close(loadT);
-        nameA = rdata['web'];
-        var status = name == 'nginx' ? '<p onclick="GetNginxStatus()">' + lan.soft.nginx_status + '</p>' : '';
-        var menu = '';
-        if (version != undefined || version != '') {
-            var menu = '<p onclick="softChangeVer(\'' + name + '\',\'' + version + '\')">' + lan.soft.nginx_version + '</p>';
+
+function setOpCfg(){
+    orPost('get_cfg', {}, function(data){
+        var rdata = $.parseJSON(data.data);
+        var rdata = rdata.data;
+        console.log(rdata);
+
+        var mlist = '';
+        for (var i = 0; i < rdata.length; i++) {
+            var w = '70'
+            var ibody = '<input style="width: ' + w + 'px;" class="bt-input-text mr5" name="' + rdata[i].name + '" value="' + rdata[i].value + '" type="text" >';
+            switch (rdata[i].type) {
+                case 0:
+                    var selected_1 = (rdata[i].value == 1) ? 'selected' : '';
+                    var selected_0 = (rdata[i].value == 0) ? 'selected' : '';
+                    ibody = '<select class="bt-input-text mr5" name="' + rdata[i].name + '" style="width: ' + w + 'px;">\
+                        <option value="1" ' + selected_1 + '>开启</option>\
+                        <option value="0" ' + selected_0 + '>关闭</option>\
+                    </select>';
+                    break;
+                case 1:
+                    var selected_1 = (rdata[i].value == 'on') ? 'selected' : '';
+                    var selected_0 = (rdata[i].value == 'off') ? 'selected' : '';
+                    ibody = '<select class="bt-input-text mr5" name="' + rdata[i].name + '" style="width: ' + w + 'px;">\
+                        <option value="on" ' + selected_1 + '>开启</option>\
+                        <option value="off" ' + selected_0 + '>关闭</option>\
+                    </select>';
+                    break;
+            }
+            mlist += '<p style="margin-top:15px;"><span>' + rdata[i].name + '</span>' + ibody + "<b class='unit c9'>"+rdata[i].unit+"</b>" +', <font class="c9">' + rdata[i].ps + '</font></p>';
         }
-
-        var waf = ''
-        if (name == 'nginx') {
-            waf = '<p onclick="waf()">' + lan.soft.waf_title + '</p>'
-        }
-
-        var logsPath = (name == 'nginx') ? '/www/wwwlogs/nginx_error.log' : '/www/wwwlogs/error_log';
-        layer.open({
-            type: 1,
-            area: '640px',
-            title: name + '管理',
-            closeBtn: 2,
-            shift: 0,
-            content: '<div class="bt-w-main" style="width:640px;">\
-                <div class="bt-w-menu">\
-                    <p class="bgw" onclick="service(\'' + name + '\',' + nameA.status + ')">' + lan.soft.web_service + '</p>\
-                    <p onclick="configChange(\'' + name + '\')">' + lan.soft.config_edit + '</p>\
-                    ' + waf + '\
-                    ' + menu + '\
-                    ' + status + '\
-                    <p onclick="showLogs(\'' + logsPath + '\')">错误日志</p>\
-                </div>\
-                <div id="webEdit-con" class="bt-w-con pd15" style="height:555px;overflow:auto">\
-                    <div class="soft-man-con"></div>\
-                </div>\
-            </div>'
-        });
-        service(name, nameA.status);
-        $(".bt-w-menu p").click(function() {
-            //var i = $(this).index();
-            $(this).addClass("bgw").siblings().removeClass("bgw");
-        });
-    });
-}
-
-//显示指定日志
-function showLogs(logPath) {
-    var loadT = layer.msg(lan.public.the_get, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.post('/ajax?action=GetOpeLogs', { path: logPath }, function(rdata) {
-        layer.close(loadT);
-        if (rdata.msg == '') rdata.msg = '当前没有日志!';
-        var ebody = '<div class="soft-man-con"><textarea readonly="" style="margin: 0px;width: 500px;height: 520px;background-color: #333;color:#fff; padding:0 5px" id="error_log">' + rdata.msg + '</textarea></div>';
-        $(".soft-man-con").html(ebody);
-        var ob = document.getElementById('error_log');
-        ob.scrollTop = ob.scrollHeight;
-    });
-}
-
-//WAF防火墙
-function waf() {
-    var loadT = layer.msg(lan.public.the_get, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.get("/waf?action=GetConfig", function(rdata) {
-        layer.close(loadT);
-        if (rdata.status == -1) {
-            layer.msg(lan.soft.waf_not, { icon: 5, time: 5000 });
-            return;
-        }
-
-        var whiteList = ""
-        for (var i = 0; i < rdata.ipWhitelist.length; i++) {
-            if (rdata.ipWhitelist[i] == "") continue;
-            whiteList += "<tr><td>" + rdata.ipWhitelist[i] + "</td><td><a href=\"javascript:deleteWafKey('ipWhitelist','" + rdata.ipWhitelist[i] + "');\">" + lan.public.del + "</a></td></tr>";
-        }
-
-        var blackList = ""
-        for (var i = 0; i < rdata.ipBlocklist.length; i++) {
-            if (rdata.ipBlocklist[i] == "") continue;
-            blackList += "<tr><td>" + rdata.ipBlocklist[i] + "</td><td><a href=\"javascript:deleteWafKey('ipBlocklist','" + rdata.ipBlocklist[i] + "');\">" + lan.public.del + "</a></td></tr>";
-        }
-
-        var cc = rdata.CCrate.split('/')
-
-        var con = "<div class='wafConf'>\
-                    <div class='wafConf-btn'>\
-                        <span>" + lan.soft.waf_title + "</span><div class='ssh-item'>\
-                            <input class='btswitch btswitch-ios' id='closeWaf' type='checkbox' " + (rdata.status == 1 ? 'checked' : '') + ">\
-                            <label class='btswitch-btn' for='closeWaf' onclick='CloseWaf()'></label>\
+        var con = '<style>.conf_p p{margin-bottom: 2px}</style><div class="conf_p" style="margin-bottom:0">\
+                        ' + mlist + '\
+                        <div style="margin-top:10px; padding-right:15px" class="text-right">\
+                            <button class="btn btn-success btn-sm mr5" onclick="setOpCfg()">刷新</button>\
+                            <button class="btn btn-success btn-sm" onclick="submitConf()">保存</button>\
                         </div>\
-                        <div class='pull-right'>\
-                        <button class='btn btn-default btn-sm' onclick='gzEdit()'>" + lan.soft.waf_edit + "</button>\
-                        <button class='btn btn-default btn-sm' onclick='upLimit()'>" + lan.soft.waf_up_title + "</button>\
-                        </div>\
-                    </div>\
-                    <div class='wafConf_checkbox label-input-group ptb10 relative'>\
-                    <input type='checkbox' id='waf_UrlDeny' " + (rdata['UrlDeny'] == 'on' ? 'checked' : '') + " onclick=\"SetWafConfig('UrlDeny','" + (rdata['UrlDeny'] == 'on' ? 'off' : 'on') + "')\" /><label for='waf_UrlDeny'>" + lan.soft.waf_input1 + "</label>\
-                    <input type='checkbox' id='waf_CookieMatch' " + (rdata['CookieMatch'] == 'on' ? 'checked' : '') + " onclick=\"SetWafConfig('CookieMatch','" + (rdata['CookieMatch'] == 'on' ? 'off' : 'on') + "')\" /><label for='waf_CookieMatch'>" + lan.soft.waf_input2 + "</label>\
-                    <input type='checkbox' id='waf_postMatch' " + (rdata['postMatch'] == 'on' ? 'checked' : '') + " onclick=\"SetWafConfig('postMatch','" + (rdata['postMatch'] == 'on' ? 'off' : 'on') + "')\" /><label for='waf_postMatch'>" + lan.soft.waf_input3 + "</label>\
-                    <input type='checkbox' id='waf_CCDeny' " + (rdata['CCDeny'] == 'on' ? 'checked' : '') + " onclick=\"SetWafConfig('CCDeny','" + (rdata['CCDeny'] == 'on' ? 'off' : 'on') + "')\" /><label for='waf_CCDeny'>" + lan.soft.waf_input4 + "</label>\
-                    <input type='checkbox' id='waf_attacklog' " + (rdata['attacklog'] == 'on' ? 'checked' : '') + " onclick=\"SetWafConfig('attacklog','" + (rdata['attacklog'] == 'on' ? 'off' : 'on') + "')\" /><label for='waf_attacklog'>" + lan.soft.waf_input5 + "</label>\
-                    <span class='glyphicon glyphicon-folder-open' style='position: absolute; right: 10px; top: 12px; color: orange;cursor: pointer' onclick='openPath(\"/www/wwwlogs/waf\")'></span>\
-                    </div>\
-                    <div class='wafConf_cc'>\
-                    <span>" + lan.soft.waf_input6 + "</span><input id='CCrate_1' class='bt-input-text' type='number' value='" + cc[0] + "' style='width:80px;margin-right:30px'/>\
-                    <span>" + lan.soft.waf_input7 + "(" + lan.bt.s + ")</span><input id='CCrate_2' class='bt-input-text' type='number' value='" + cc[1] + "' style='width:80px;'/>\
-                    <button onclick=\"SetWafConfig('CCrate','')\" class='btn btn-default btn-sm'>" + lan.public.ok + "</button>\
-                    </div>\
-                    <div class='wafConf_ip'>\
-                        <fieldset>\
-                        <legend>" + lan.soft.waf_input8 + "</legend>\
-                        <input type='text' id='ipWhitelist_val' class='bt-input-text mr5' placeholder='" + lan.soft.waf_ip + "' style='width:175px;' /><button onclick=\"addWafKey('ipWhitelist')\" class='btn btn-default btn-sm'>" + lan.public.add + "</button>\
-                        <div class='table-overflow'><table class='table table-hover'>" + whiteList + "</table></div>\
-                        </fieldset>\
-                        <fieldset>\
-                        <legend>" + lan.soft.waf_input9 + "</legend>\
-                        <input type='text' id='ipBlocklist_val' class='bt-input-text mr5' placeholder='" + lan.soft.waf_ip + "' style='width:175px;' /><button onclick=\"addWafKey('ipBlocklist')\" class='btn btn-default btn-sm'>" + lan.public.add + "</button>\
-                        <div class='table-overflow'><table class='table table-hover'>" + blackList + "</table></div>\
-                        </fieldset>\
-                    </div>\
-                </div>"
+                    </div>'
         $(".soft-man-con").html(con);
     });
 }
 
-//上传限制
-function upLimit() {
-    var loadT = layer.msg(lan.public.the_get, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.get("/waf?action=GetConfig", function(rdata) {
-        layer.close(loadT);
-        var black_fileExt = ''
-        for (var i = 0; i < rdata.black_fileExt.length; i++) {
-            black_fileExt += "<tr><td>" + rdata.black_fileExt[i] + "</td><td><a style='float:right;' href=\"javascript:deleteWafKey('black_fileExt','" + rdata.black_fileExt[i] + "');\">" + lan.public.del + "</a></td></tr>";
-        }
+function submitConf() {
+    var data = {
+        worker_processes: $("input[name='worker_processes']").val(),
+        worker_connections: $("input[name='worker_connections']").val(),
+        keepalive_timeout: $("input[name='keepalive_timeout']").val(),
+        gzip: $("select[name='gzip']").val() || 'on',
+        gzip_min_length: $("input[name='gzip_min_length']").val(),
+        gzip_comp_level: $("input[name='gzip_comp_level']").val(),
+        client_max_body_size: $("input[name='client_max_body_size']").val(),
+        server_names_hash_bucket_size: $("input[name='server_names_hash_bucket_size']").val(),
+        client_header_buffer_size: $("input[name='client_header_buffer_size']").val(),
+    };
 
-        if ($("#blacktable").html() != undefined) {
-            $("#blacktable").html(black_fileExt);
-            $("#black_fileExt_val").val('');
-            return;
-        }
-
-        layer.open({
-            type: 1,
-            area: '300px',
-            title: lan.soft.waf_up_title,
-            closeBtn: 2,
-            shift: 0,
-            content: "<div class='dirBinding mlr15'>" +
-                "<input class='bt-input-text mr5' type='text' placeholder='" + lan.soft.waf_up_from1 + "' id='black_fileExt_val' style='height: 28px; border-radius: 3px;width: 219px;margin-top:15px' />" +
-                "<button class='btn btn-success btn-sm' onclick=\"addWafKey('black_fileExt')\">" + lan.public.add + "</button>" +
-                "</div>" +
-                "<div class='divtable' style='margin:15px'><table class='table table-hover' width='100%' style='margin-bottom:0'>" +
-                "<thead><tr><th>" + lan.soft.waf_up_from2 + "</th><th width='100' class='text-right'>" + lan.public.action + "</th></tr></thead>" +
-                "<tbody id='blacktable'>" + black_fileExt + "</tbody>" +
-                "</table></div>"
-        });
-    });
-}
-
-//设置waf状态
-function closeWaf() {
-    var loadT = layer.msg(lan.public.the, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.post('/waf?action=SetStatus', '', function(rdata) {
-        layer.close(loadT)
-        layer.msg(rdata.msg, { icon: rdata.status ? 1 : 5 });
-        if (rdata.status) waf();
-    });
-}
-
-//取规则文件 
-function getWafFile(name) {
-    onlineEditFile(0, '/www/server/panel/vhost/wafconf/' + name);
-}
-//规则编辑
-function gzEdit() {
-    layer.open({
-        type: 1,
-        area: '360px',
-        title: lan.soft.waf_edit,
-        closeBtn: 2,
-        shift: 0,
-        content: "<div class='gzEdit'><button class='btn btn-default btn-sm' onclick=\"GetWafFile('cookie')\">Cookie</button>\
-                <button class='btn btn-default btn-sm' onclick=\"GetWafFile('post')\">POST</button>\
-                <button class='btn btn-default btn-sm' onclick=\"GetWafFile('url')\">URL</button>\
-                <button class='btn btn-default btn-sm' onclick=\"GetWafFile('user-agent')\">User-Agent</button>\
-                <button class='btn btn-default btn-sm' onclick=\"GetWafFile('args')\">Args</button>\
-                <button class='btn btn-default btn-sm' onclick=\"GetWafFile('whiteurl')\">" + lan.soft.waf_url_white + "</button>\
-                <button class='btn btn-default btn-sm' onclick=\"GetWafFile('returnhtml')\">" + lan.soft.waf_index + "</button>\
-                <button class='btn btn-default btn-sm' onclick=\"updateWaf('returnhtml')\">" + lan.soft.waf_cloud + "</button></div>"
-    });
-}
-
-//更新WAF规则
-function updateWaf() {
-    var loadT = layer.msg(lan.soft.waf_update, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.post('/waf?action=updateWaf', '', function(rdata) {
-        layer.close(loadT)
-        layer.msg(rdata.msg, { icon: rdata.status ? 1 : 5 });
-    });
-}
-
-//设置WAF配置值
-function setWafConfig(name, value) {
-    if (name == 'CCrate') {
-        var CCrate_1 = $("#CCrate_1").val();
-        var CCrate_2 = $("#CCrate_2").val();
-        if (CCrate_1 < 1 || CCrate_1 > 3000 || CCrate_2 < 1 || CCrate_2 > 1800) {
-            layer.msg(lan.soft.waf_cc_err, { icon: 5 });
-            return;
-        }
-        value = CCrate_1 + '/' + CCrate_2;
-    }
-    var loadT = layer.msg(lan.public.the, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.post('/waf?action=SetConfigString', 'name=' + name + '&value=' + value, function(rdata) {
-        layer.close(loadT)
-        layer.msg(rdata.msg, { icon: rdata.status ? 1 : 5 });
-        if (rdata.status) waf();
-
+    // console.log(data);
+    orPost('set_cfg', data, function(rdata){
+        var rdata = $.parseJSON(rdata.data);
+        console.log(rdata);
+        layer.msg(rdata.msg, { icon: rdata.status ? 1 : 2 });
     });
 }
 
 
-//删除WAF指定值
-function deleteWafKey(name, value) {
-    var loadT = layer.msg(lan.public.the, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.post('/waf?action=SetConfigList&act=del', 'name=' + name + '&value=' + value, function(rdata) {
-        layer.close(loadT)
-        layer.msg(rdata.msg, { icon: rdata.status ? 1 : 5 });
-        if (rdata.status) waf();
-        if (name == 'black_fileExt') upLimit();
-    });
-}
 
-//删除WAF指定值
-function addWafKey(name) {
-    var value = $('#' + name + '_val').val();
-    var loadT = layer.msg(lan.public.the, { icon: 16, time: 0, shade: [0.3, '#000'] });
-    $.post('/waf?action=SetConfigList&act=add', 'name=' + name + '&value=' + value, function(rdata) {
-        layer.close(loadT)
-        layer.msg(rdata.msg, { icon: rdata.status ? 1 : 5 });
-        if (rdata.status) waf();
-        if (name == 'black_fileExt') upLimit();
-    });
-}
+
+
+
+
+
+
+
+
+

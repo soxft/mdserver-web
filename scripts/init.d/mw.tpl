@@ -14,7 +14,7 @@
 
 
 PATH=/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export LC_ALL="en_US.UTF-8"
+# export LC_ALL="en_US.UTF-8"
 
 mw_path={$SERVER_PATH}
 PATH=$PATH:$mw_path/bin
@@ -114,6 +114,7 @@ mw_stop_panel()
             kill -9 $p &>/dev/null
     done
     
+    pidfile=${mw_path}/logs/mw.pid
     if [ -f $pidfile ];then
         rm -f $pidfile
     fi
@@ -178,6 +179,22 @@ error_logs()
 	tail -n 100 $mw_path/logs/error.log
 }
 
+
+mw_update()
+{
+    curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/master/scripts/update.sh | bash
+}
+
+mw_update_dev()
+{
+    curl -fsSL  https://raw.githubusercontent.com/midoks/mdserver-web/dev/scripts/update_dev.sh | bash
+}
+
+mw_install_app()
+{
+    bash $mw_path/scripts/quick/app.sh
+}
+
 case "$1" in
     'start') mw_start;;
     'stop') mw_stop;;
@@ -193,6 +210,9 @@ case "$1" in
         mw_start_task;;
     'status') mw_status;;
     'logs') error_logs;;
+    'update') mw_update;;
+    'update_dev') mw_update_dev;;
+    'install_app') mw_install_app;;
     'default')
         cd $mw_path
         port=7200
@@ -223,15 +243,24 @@ case "$1" in
             elif [ "$v4" != "" ]; then
                 address="MW-Panel-Url: http://$v4:$port$auth_path"
             elif [ "$v6" != "" ]; then
-                echo 'True' > $mw_path/data/ipv6.pl
+
+                if [ ! -f $mw_path/data/ipv6.pl ];then
+                    #  Need to restart ipv6 to take effect
+                    mw_stop
+                    mw_start
+                    echo 'True' > $mw_path/data/ipv6.pl
+                fi
+                
                 address="MW-Panel-Url: http://[$v6]:$port$auth_path"
+
             else
-                address="No v4 or v6 available"
+                address="MW-Panel-Url: http://you-network-ip:$port$auth_path"
             fi
         else
             address="MW-Panel-Url: http://$address:$port$auth_path"
         fi
 
+        show_panel_ip="$port|"
         echo -e "=================================================================="
         echo -e "\033[32mMW-Panel default info!\033[0m"
         echo -e "=================================================================="
@@ -239,8 +268,11 @@ case "$1" in
         echo -e `python3 $mw_path/tools.py username`
         echo -e "password: $password"
         echo -e "\033[33mWarning:\033[0m"
-        echo -e "\033[33mIf you cannot access the panel, \033[0m"
-        echo -e "\033[33mrelease the following port (7200|888|80|443|22) in the security group\033[0m"
+        echo -e "\033[33mIf you cannot access the panel. \033[0m"
+        echo -e "\033[33mrelease the following port (${show_panel_ip}888|80|443|22) in the security group.\033[0m"
         echo -e "=================================================================="
+        ;;
+    *)
+        cd $mw_path && python3 $mw_path/tools.py cli $1
         ;;
 esac

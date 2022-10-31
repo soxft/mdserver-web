@@ -24,7 +24,6 @@ else
 	useradd -g www -s /bin/bash www
 fi
 
-# cd /www/server/mdserver-web/plugins/openresty && /bin/bash install.sh install 1.21.4.1
 Install_openresty()
 {
 	# ----- cpu start ------
@@ -59,10 +58,16 @@ Install_openresty()
 	# --with-openssl=$serverPath/source/lib/openssl-1.0.2q
 	cd ${openrestyDir}/openresty-${VERSION} && ./configure \
 	--prefix=$serverPath/openresty \
+	--with-ipv6 \
+	--with-stream \
 	--with-http_v2_module \
 	--with-http_ssl_module  \
 	--with-http_slice_module \
-	--with-http_stub_status_module
+	--with-http_stub_status_module \
+	--with-http_realip_module
+	# --without-luajit-gc64
+	# --with-debug
+	# 用于调式
 
 	make -j${cpuCore} && make install && make clean
 

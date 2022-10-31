@@ -68,8 +68,8 @@ class crontab_api:
                     _list[i]['where_hour']), str(_list[i]['where_minute'])))
             data.append(tmp)
 
-        _ret = {}
-        _ret['data'] = data
+        rdata = {}
+        rdata['data'] = data
 
         count = mw.M('crontab').where('', ()).count()
         _page = {}
@@ -78,9 +78,17 @@ class crontab_api:
         _page['row'] = psize
         _page['tojs'] = "getCronData"
 
-        _ret['list'] = mw.getPage(_page)
-        _ret['p'] = p
-        return mw.getJson(_ret)
+        rdata['list'] = mw.getPage(_page)
+        rdata['p'] = p
+
+        # backup hock
+        bh_file = mw.getPanelDataDir() + "/hook_backup.json"
+        if os.path.exists(bh_file):
+            hb_data = mw.readFile(bh_file)
+            hb_data = json.loads(hb_data)
+            rdata['backup_hook'] = hb_data
+
+        return mw.getJson(rdata)
 
     # 设置计划任务状态
     def setCronStatusApi(self):
@@ -106,6 +114,56 @@ class crontab_api:
         data = mw.M('crontab').where(
             'id=?', (sid,)).field(self.field).find()
         return mw.getJson(data)
+
+    # 参数校验
+    def cronCheck(self, params):
+
+        if params['stype'] == 'site' or params['stype'] == 'database' or params['stype'] == 'logs':
+            if params['save'] == '':
+                return False, '保留份数不能为空!'
+
+        if params['type'] == 'day':
+            if params['hour'] == '':
+                return False, '小时不能为空!'
+            if params['minute'] == '':
+                return False, '分钟不能为空!'
+
+        if params['type'] == 'day-n':
+            if params['where1'] == '':
+                return False, '天不能为空!'
+            if params['hour'] == '':
+                return False, '小时不能为空!'
+            if params['minute'] == '':
+                return False, '分钟不能为空!'
+        if params['type'] == 'hour':
+            if params['minute'] == '':
+                return False, '分钟不能为空!'
+
+        if params['type'] == 'hour-n':
+            if params['hour'] == '':
+                return False, '小时不能为空!'
+            if params['minute'] == '':
+                return False, '分钟不能为空!'
+
+        if params['type'] == 'minute-n':
+            if params['where1'] == '':
+                return False, '分钟不能为空!'
+
+        if params['type'] == 'week':
+            if params['hour'] == '':
+                return False, '小时不能为空!'
+            if params['minute'] == '':
+                return False, '分钟不能为空!'
+
+        if params['type'] == 'month':
+            if params['where1'] == '':
+                return False, '日不能为空!'
+            if params['hour'] == '':
+                return False, '小时不能为空!'
+            if params['minute'] == '':
+                return False, '分钟不能为空!'
+
+        return True, 'OK'
 
     def modifyCrondApi(self):
         sid = request.form.get('id', '')
@@ -139,6 +197,11 @@ class crontab_api:
             'sbody': sbody,
             'urladdress': urladdress,
         }
+
+        is_check_pass, msg = self.cronCheck(params)
+        if not is_check_pass:
+            return mw.returnJson(is_check_pass, msg)
+
         cuonConfig, get, name = self.getCrondCycle(params)
         cronInfo = mw.M('crontab').where(
             'id=?', (sid,)).field(self.field).find()
@@ -167,7 +230,7 @@ class crontab_api:
         logFile = mw.getServerDir() + '/cron/' + echo['echo'] + '.log'
         if not os.path.exists(logFile):
             return mw.returnJson(False, '当前日志为空!')
-        log = mw.getNumLines(logFile, 500)
+        log = mw.getLastLine(logFile, 500)
         return mw.returnJson(True, log)
 
     def addApi(self):
@@ -201,6 +264,10 @@ class crontab_api:
             'sbody': sbody,
             'urladdress': urladdress,
         }
+
+        is_check_pass, msg = self.cronCheck(params)
+        if not is_check_pass:
+            return mw.returnJson(is_check_pass, msg)
 
         addData = self.add(params)
         if addData > 0:
@@ -409,15 +476,25 @@ class crontab_api:
             shell = param.sFile
         else:
             head = "#!/bin/bash\nPATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin\nexport PATH\n"
+
+            source_bin_activate = '''
+export LANG=en_US.UTF-8
+MW_PATH=%s/bin/activate
+if [ -f $MW_PATH ];then
+    source $MW_PATH
+fi
+            ''' % (mw.getRunDir(),)
+
+            head = head + source_bin_activate + "\n"
             log = '.log'
 
             script_dir = mw.getServerDir() + "/mdserver-web/scripts"
 
             wheres = {
-                'path': head + "python " + script_dir + "/backup.py path " + param['sname'] + " " + str(param['save']),
-                'site':   head + "python " + script_dir + "/backup.py site " + param['sname'] + " " + str(param['save']),
-                'database': head + "python " + script_dir + "/backup.py database " + param['sname'] + " " + str(param['save']),
-                'logs':   head + "python " + script_dir + "/logs_backup.py " + param['sname'] + log + " " + str(param['save']),
+                'path': head + "python3 " + script_dir + "/backup.py path " + param['sname'] + " " + str(param['save']),
+                'site':   head + "python3 " + script_dir + "/backup.py site " + param['sname'] + " " + str(param['save']),
+                'database': head + "python3 " + script_dir + "/backup.py database " + param['sname'] + " " + str(param['save']),
+                'logs':   head + "python3 " + script_dir + "/logs_backup.py " + param['sname'] + log + " " + str(param['save']),
                 'rememory': head + "/bin/bash " + script_dir + '/rememory.sh'
             }
             if param['backup_to'] != 'localhost':
